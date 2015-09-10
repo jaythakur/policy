@@ -219,7 +219,8 @@ function table_install_data()
     global $wpdb;
 
     $table_name = $wpdb->prefix . 'divisions'; // do not forget about tables prefix
-
+	$count = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+	if($count == 0) {
     $wpdb->insert($table_name, array(
         'name' => 'President’s Office'
     ));
@@ -244,6 +245,7 @@ function table_install_data()
 	$wpdb->insert($table_name, array(
         'name' => 'Enrollment Management'
     ));
+	}
 }
 
 register_activation_hook(__FILE__, 'table_install_data');

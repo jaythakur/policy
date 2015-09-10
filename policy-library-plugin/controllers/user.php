@@ -73,7 +73,8 @@ Class User {
 		add_role('policy_publisher', __( 'Policy Publisher' ), array('read' => true, 'edit_posts'   => true, 'delete_posts' => true));
 		
 		foreach( array( 'edit-post','edit-policy') as $hook )
-    add_filter( "views_".$hook , array( &$this, 'wpse_30331_custom_view_count' ), 10, 1);
+    		add_filter( "views_".$hook , array( &$this, 'wpse_30331_custom_view_count' ), 10, 1);
+			add_filter( "views_".$hook , array( &$this, 'modified_views_so_15799171' ), 10, 1);
 		
 		}
 		
@@ -344,7 +345,7 @@ function wpse_30331_manipulate_views( $what, $views )
     $pending = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'pending' AND post_author IN($ids) AND post_type = '$what' ");
 	}
 	else {
-		return $views; exit;
+		return $views;
 	}
     
 
@@ -363,9 +364,28 @@ function wpse_30331_manipulate_views( $what, $views )
     //echo '<hr><hr>';
     //echo 'Query for this screen of this post_type: <b>'.$what.'</b><pre>'.print_r($wp_query,true).'</pre>';
 
-    return $views; exit;
+    return $views;
 }
 
+function modified_views_so_15799171( $views ) 
+{
+	
+  
+
+ /*   if( isset( $views['publish'] ) )
+        $views['publish'] = str_replace( 'Published ', 'Online ', $views['publish'] );*/
+
+    
+        $views['pending'] = str_replace( 'Pending ', 'Pending Approval', $views['pending'] );
+
+   /* if( isset( $views['draft'] ) )
+        $views['draft'] = str_replace( 'Drafts ', 'In progress ', $views['draft'] );
+
+    if( isset( $views['trash'] ) )
+        $views['trash'] = str_replace( 'Trash ', 'Dustbin ', $views['trash'] );
+*/
+    return $views;
+}
 
 
 }
