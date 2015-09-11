@@ -13,7 +13,7 @@ global $wpdb;
 define( 'Policy_Library_Plugin', '1.1.1' );
 global $policy_library_plugin_db_version;
 $policy_library_plugin_db_version = '1.1'; // version changed from 1.0 to 1.1
-include dirname(__FILE__) . '/post-expirator.php';
+//include dirname(__FILE__) . '/post-expirator.php';
 
 function plp_enqueue_scripts(){
 
@@ -34,6 +34,7 @@ add_action( 'admin_init', 'plp_enqueue_scripts');
 require_once 'controllers/createCstPst.php';
 require_once 'controllers/user.php';
 require_once 'controllers/post.php';
+require_once 'controllers/custom_bulk_action.php';
 
 
 function manage_division() {
@@ -116,7 +117,7 @@ function plp_add_to_menu() {
     add_submenu_page('library', __('Add new', 'policy-library'), __('Add new', 'policy-library'), 'activate_plugins', 'divisions_form', 'manage_division_form');
 	add_submenu_page('library', __('Responsible Offices', 'policy-library'), __('Responsible Offices', 'policy-library'), 'activate_plugins', 'responsible_offices', 'manage_responsible_offices');
     add_submenu_page('library', __('Add new', 'policy-library'), __('Add new', 'policy-library'), 'activate_plugins', 'responsible_offices_form', 'manage_responsible_offices_form');
-	add_submenu_page('library',__('Post Expirator Options','post-expirator'),__('Post Expirator','post-expirator'),'activate_plugins','policy-expiration','postExpiratorMenu');
+	/*add_submenu_page('library',__('Post Expirator Options','post-expirator'),__('Post Expirator','post-expirator'),'activate_plugins','policy-expiration','postExpiratorMenu');*/
 	
 }
 
@@ -289,11 +290,26 @@ function jc_append_post_status_list(){
     
 }
 
+add_action('init','check_post_expire');
 
-
-
-
-
-
-
-
+function check_post_expire() {
+	global $wpdb;
+	
+	$postexpiratorTimeCrawl = get_option('postexpiratorTimeCrawl');
+	$hourdiff = round((time() - $postexpiratorTimeCrawl)/3600);
+	if($hourdiff > 12) {
+	$results = $wpdb->get_results($wpdb->prepare('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND postmeta.meta_key = %s AND postmeta.meta_value >= %d','expiration-date',time()));
+	foreach ($results as $result) {
+				
+				$post_id = $result->post_id;
+				$current_post = get_post( $post_id, 'ARRAY_A' );
+	    		$current_post['post_status'] = 'draft';
+    			wp_update_post($current_post);
+				
+				// go mail
+				
+			}
+	
+	$postexpiratorTimeCrawl = update_option('postexpiratorTimeCrawl',time());
+	}
+}

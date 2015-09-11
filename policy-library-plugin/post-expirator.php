@@ -1120,6 +1120,7 @@ add_action('admin_init','postexpirator_css');
  */
 function postexpirator_upgrade() {
 
+
 	// Check for current version, if not exists, run activation
 	$version = get_option('postexpiratorVersion');
 	if ($version === false) { //not installed, run default activation
@@ -1140,6 +1141,7 @@ function postexpirator_upgrade() {
 
 			// Schedule Events/Migrate Config
 			$results = $wpdb->get_results($wpdb->prepare('select post_id, meta_value from ' . $wpdb->postmeta . ' as postmeta, '.$wpdb->posts.' as posts where postmeta.post_id = posts.ID AND postmeta.meta_key = %s AND postmeta.meta_value >= %d','expiration-date',time()));
+			
 			foreach ($results as $result) {
 				wp_schedule_single_event($result->meta_value,'postExpiratorExpire',array($result->post_id));
 				$opts = array();

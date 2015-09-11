@@ -95,14 +95,36 @@ Class CreateCustomPostType {
 	
 		add_meta_box(
 			'myplugin_sectionid',
-			__( 'Custom Meta Box', 'myplugin_textdomain' ),
+			__( 'Custom Meta Box', 'policy_library_plugin' ),
 			 array( &$this, 'pvplugin_meta_box_callback' ),
 			$screen
 		);
+		
+		add_meta_box(
+			'myplugin_side_sectionid',
+			__( 'Policy Expire', 'policy_library_plugin' ),
+			 array( &$this, 'pvplugin_side_meta_box_callback' ),
+			$screen,'side','high'
+		);
+		
 	}
 	}
 
 	
+	function pvplugin_side_meta_box_callback( $post ) {
+			global $wpdb;
+			global $user_ID;
+			$expiration_date = get_post_meta( $post->ID, '_expiration-date', true );
+			if($expiration_date) {
+$diff = abs($expiration_date - time());
+
+$years = floor($diff / (365*60*60*24));
+$months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+$days = floor(($diff - $years * 365*60*60*24 - $months*30*60*60*24)/ (60*60*24));
+
+printf("Policy %d years, %d months, %d days about to expire\n", $years, $months, $days);
+			}
+	}
 	/**
  * Prints the box content.
  * 
@@ -177,7 +199,7 @@ function pvplugin_meta_box_callback( $post ) {
     </select>
     </div>
     </div>
-    <div class="meta_container"><label for="pvplugin_new_field"><?php echo _e( 'Responsible Officies', 'pvplugin_textdomain' ); ?></label>
+    <div class="meta_container"><label for="pvplugin_new_field"><?php echo _e( 'Responsible Office', 'pvplugin_textdomain' ); ?></label>
     <div class="field">
     <select name="responsible_office" id="responsible_office_user">
            	<?php 
@@ -296,6 +318,8 @@ function pvplugin_save_meta_box_data( $post_id ) {
 	update_post_meta( $post_id, 'date_adopted_month', $_POST['date_adopted_month'] );
 	update_post_meta( $post_id, 'date_adopted_year', $_POST['date_adopted_year'] );
 	update_post_meta( $post_id, 'additional_refrence', $additional_refrence );
+	update_post_meta( $post_id, '_expiration-date', strtotime('+ 1 year') );
+	
 }
 
 /**

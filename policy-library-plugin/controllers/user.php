@@ -14,6 +14,10 @@ Class User {
 		add_action('user_register', array( &$this, 'save_custom_plp_user_profile_fields' ));
 		add_action( 'wp_ajax_responsible_office_ajax_request',  array( &$this, 'responsible_office_ajax_request' ) );
 		wp_enqueue_script( 'script-user',plugins_url('../assets/js/user_plp.js',__FILE__ ) );
+		if ( !current_user_can( 'manage_options' ) ) {
+			add_action( 'admin_menu',  array( &$this, 'remove_admin_menus' ) );
+			add_action( 'admin_menu',  array( &$this, 'remove_admin_submenus' ) );
+		}
 		
     }
 
@@ -30,6 +34,7 @@ Class User {
 			$role = $role;
 		}
 		if($role == 'policy_editor') {
+			
 		if ( current_user_can( 'read_own_post' ) ) {
 			
 			add_action( 'pre_get_posts', array( &$this, 'read_own_post_function' ) );
@@ -41,9 +46,11 @@ Class User {
 		$role->add_cap( 'edit_published_posts' );
 		$role->add_cap( 'delete_posts' );
 		$role->add_cap( 'delete_private_posts' );
+		$role->add_cap( 'manage_categories' );
+		add_action( 'current_screen',array( &$this, 'thisScreen' ));
 		}
 		else if($role == 'policy_publisher') {
-			
+					add_action( 'current_screen',array( &$this, 'thisScreen' ));
 			if ( current_user_can( 'read_group_posts' ) ) {
 			
 						add_action( 'pre_get_posts', array( &$this, 'read_group_posts_function' ) );
@@ -60,6 +67,7 @@ Class User {
 			$role1->add_cap( 'edit_private_posts' );
 			$role1->add_cap( 'edit_published_posts' );
 			$role1->add_cap( 'publish_posts' );
+			$role1->add_cap( 'manage_categories' );
 			
 		
 		}
@@ -330,6 +338,7 @@ function wpse_30331_manipulate_views( $what, $views )
     $publish = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'publish' AND post_author = '$user_ID' AND post_type = '$what' ");
     $draft = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'draft' AND post_author = '$user_ID' AND post_type = '$what' ");
     $pending = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'pending' AND post_author = '$user_ID' AND post_type = '$what' ");
+	$trash = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'trash' AND post_author = '$user_ID' AND post_type = '$what' ");
 
 	}
 	else if($role == 'policy_publisher') {
@@ -343,6 +352,7 @@ function wpse_30331_manipulate_views( $what, $views )
     $publish = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'publish' AND post_author IN($ids) AND post_type = '$what' ");
     $draft = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'draft' AND post_author IN($ids) AND post_type = '$what' ");
     $pending = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'pending' AND post_author IN($ids) AND post_type = '$what' ");
+	$trash = $wpdb->get_var("SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'trash' AND post_author IN($ids) AND post_type = '$what' ");
 	}
 	else {
 		return $views;
@@ -355,10 +365,10 @@ function wpse_30331_manipulate_views( $what, $views )
      */
 	 
     $views['all'] = preg_replace( '/\(.+\)/U', '('.$total.')', $views['all'] );
-	if($publish) { $views['publish'] = preg_replace( '/\(.+\)/U', '('.$publish.')', $views['publish'] );  }
-    if($draft) { $views['draft'] = preg_replace( '/\(.+\)/U', '('.$draft.')', $views['draft'] );  }
-    if($pending) { $views['pending'] = preg_replace( '/\(.+\)/U', '('.$pending.')', $views['pending'] );  }
-
+	$views['publish'] = preg_replace( '/\(.+\)/U', '('.$publish.')', $views['publish'] );
+    $views['draft'] = preg_replace( '/\(.+\)/U', '('.$draft.')', $views['draft'] );
+    $views['pending'] = preg_replace( '/\(.+\)/U', '('.$pending.')', $views['pending'] );
+	$views['trash'] = preg_replace( '/\(.+\)/U', '('.$trash.')', $views['trash'] );
     // Debug info
     //echo 'Default counts: <pre>'.print_r($views,true).'</pre>';
     //echo '<hr><hr>';
@@ -387,6 +397,60 @@ function modified_views_so_15799171( $views )
     return $views;
 }
 
+//Remove top level admin menus
+function remove_admin_menus() {
+    remove_menu_page( 'edit-comments.php' );
+    remove_menu_page( 'link-manager.php' );
+    remove_menu_page( 'tools.php' );
+    remove_menu_page( 'plugins.php' );
+    remove_menu_page( 'users.php' );
+    remove_menu_page( 'options-general.php' );
+    remove_menu_page( 'upload.php' );
+    remove_menu_page( 'edit.php' );
+    remove_menu_page( 'edit.php?post_type=page' );
+    remove_menu_page( 'themes.php' );
+}
+
+
+//Remove sub level admin menus
+function remove_admin_submenus() {
+    remove_submenu_page( 'themes.php', 'theme-editor.php' );
+    remove_submenu_page( 'themes.php', 'themes.php' );
+    remove_submenu_page( 'edit.php', 'edit-tags.php?taxonomy=post_tag' );
+    remove_submenu_page( 'edit.php', 'edit-tags.php?taxonomy=category' );
+    remove_submenu_page( 'edit.php', 'post-new.php' );
+    remove_submenu_page( 'themes.php', 'nav-menus.php' );
+    remove_submenu_page( 'themes.php', 'widgets.php' );
+    remove_submenu_page( 'themes.php', 'theme-editor.php' );
+    remove_submenu_page( 'plugins.php', 'plugin-editor.php' );
+    remove_submenu_page( 'plugins.php', 'plugin-install.php' );
+    remove_submenu_page( 'users.php', 'users.php' );
+    remove_submenu_page( 'users.php', 'user-new.php' );
+    remove_submenu_page( 'upload.php', 'media-new.php' );
+    remove_submenu_page( 'options-general.php', 'options-writing.php' );
+    remove_submenu_page( 'options-general.php', 'options-discussion.php' );
+    remove_submenu_page( 'options-general.php', 'options-reading.php' );
+    remove_submenu_page( 'options-general.php', 'options-discussion.php' );
+    remove_submenu_page( 'options-general.php', 'options-media.php' );
+    remove_submenu_page( 'options-general.php', 'options-privacy.php' );
+    remove_submenu_page( 'options-general.php', 'options-permalinks.php' );
+    remove_submenu_page( 'index.php', 'update-core.php' );
+}
+
+
+
+function thisScreen() {
+
+    $currentScreen = get_current_screen();
+	
+	if($currentScreen->id == 'edit-policy-types' || $currentScreen->id == 'edit-policy_tag')
+   	add_action( 'admin_head',array( &$this, 'my_custom_admin_head' ));
+
+}
+
+function my_custom_admin_head() {
+	echo '<style>.col-wrap .form-wrap { display:none; }.row-actions { display:none; }.tablenav .actions { display:none; }#edittag input[type="submit"] { display:none; }</style>';
+}
 
 }
 function plp_plugins_loaded_user_register(){
