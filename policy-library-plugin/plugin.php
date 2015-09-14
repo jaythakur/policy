@@ -32,6 +32,8 @@ add_action( 'admin_init', 'plp_enqueue_scripts');
  * create custom post type
  */
 require_once 'controllers/createCstPst.php';
+require_once 'controllers/sidebar_widget.php';
+require_once 'controllers/front_template.php';
 require_once 'controllers/user.php';
 require_once 'controllers/post.php';
 require_once 'controllers/custom_bulk_action.php';
@@ -312,4 +314,29 @@ function check_post_expire() {
 	
 	$postexpiratorTimeCrawl = update_option('postexpiratorTimeCrawl',time());
 	}
+}
+
+
+add_action('pre_get_posts','alter_query');
+ 
+function alter_query($query) {
+ //gets the global query var object
+ global $wp_query;
+ 
+ 
+ if ($query->is_search() )
+	if($_GET['s'] != '' && $_GET['ofc'] != '') {
+	$query-> set('post_type' ,'policy');
+	if($_GET['ofc'] != 'all') {
+	$query->set( 'meta_query', array(
+      	'relation' =>'AND',
+        array(
+              'key' => 'responsible_office',
+              'value' => $_GET['ofc']            
+        )
+  ));
+	}
+	return $query;
+	}
+	
 }

@@ -149,7 +149,7 @@ function pvplugin_meta_box_callback( $post ) {
 	
 	$next_update_year = get_post_meta( $post->ID, 'next_update_year', true );
 	
-	$division = get_post_meta( $post->ID, 'division', true );
+	$division_id = get_post_meta( $post->ID, 'division', true );
 	
 	$date_adopted = get_post_meta( $post->ID, 'date_adopted', true );
 	
@@ -161,19 +161,25 @@ function pvplugin_meta_box_callback( $post ) {
 	
 	
 		
+	
+	
+	
+	if ( current_user_can( 'manage_options' ) ) {
+		
+		
+	$responsible_office_id  = get_post_meta( $post->ID, 'responsible_office', true );
+	$responsible_offices_data = $wpdb->get_results("select * from ".$wpdb->prefix."responsible_offices");
+	$divisions_data = $wpdb->get_results("select * from ".$wpdb->prefix."divisions");
+	
+	
+	}
+	else {
 	$division_id  = esc_attr( get_the_author_meta( 'division_id', $user_ID) );
-	
-	
-	if ( current_user_can( 'read_own_post' ) ) {
 	$responsible_offices_data = $wpdb->get_results("select * from ".$wpdb->prefix."responsible_offices where division_id = '".$division_id."'");
 	$divisions_data = $wpdb->get_row("select * from ".$wpdb->prefix."divisions where id = '".$division_id."'");
 	$responsible_office_id = get_post_meta( $post->ID, 'responsible_office', true );
 	}
-	else {
-	$responsible_office_id  = esc_attr( get_the_author_meta( 'responsible_office', $user_ID ) );
-	$responsible_offices_data = $wpdb->get_results("select * from ".$wpdb->prefix."responsible_offices");
-	$divisions_data = $wpdb->get_results("select * from ".$wpdb->prefix."divisions");
-	}
+	
 	
 ?>
 	<div class="meta_container"><label for="pvplugin_new_field"><?php echo _e( 'Approvers', 'pvplugin_textdomain' ); ?></label>
@@ -183,17 +189,19 @@ function pvplugin_meta_box_callback( $post ) {
     <select name="division" id="division_id_change" onchange="get_responsible_office(this.value);">
     <?php
 	
-	if ( current_user_can( 'read_own_post' ) ) {
-		?>
-        <option value="<?php echo $division_id; ?>"><?php echo $divisions_data->name; ?></option>
+	if ( current_user_can( 'manage_options' ) ) {
+			foreach($divisions_data as $division) { ?>
+	
+     <option value="<?php echo $division->id; ?>" <?php if($division->id == $division_id) { echo 'selected'; } ?>><?php echo $division->name; ?></option>
+            <?php } ?>
+		
+        
         <?php
 	}
 	else {
-		
-	foreach($divisions_data as $division) { ?>
-	
-     <option value="<?php echo $division->id; ?>" <?php if($division->id == $division) { echo 'selected'; } ?>><?php echo $division->name; ?></option>
-            <?php } ?>
+		?>
+		<option value="<?php echo $division_id; ?>"><?php echo $divisions_data->name; ?></option>
+
             
       <?php } ?>
     </select>

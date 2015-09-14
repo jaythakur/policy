@@ -407,13 +407,14 @@ function remove_admin_menus() {
     remove_menu_page( 'options-general.php' );
     remove_menu_page( 'upload.php' );
     remove_menu_page( 'edit.php' );
-    remove_menu_page( 'edit.php?post_type=page' );
+	remove_menu_page( 'edit.php?post_type=page' );
 	remove_menu_page( 'edit.php?post_type=calender' );
 	remove_menu_page( 'edit.php?post_type=spotlight' );
 	remove_menu_page( 'edit.php?post_type=inthenews' );
 	remove_menu_page( 'edit.php?post_type=pridepoints' );
 	remove_menu_page( 'edit.php?post_type=adbanner' );
 	remove_menu_page( 'edit.php?post_type=snippets' );
+    remove_menu_page( 'edit.php?post_type=page' );
     remove_menu_page( 'themes.php' );
 }
 
